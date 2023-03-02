@@ -100,6 +100,6 @@ ItemType findBorderElement(const std::string& fileName)
 	data >> minElement;
 	while (data)
 	{
-
+		//TODO:
 	}
 }
