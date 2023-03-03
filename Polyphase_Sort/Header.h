@@ -17,3 +17,4 @@ bool polyphaseSort(const std::string& fileName, const int filesCount = 6);
 int isFileContainsSortedArray(const std::string& fileName);
 int createFileWithRandomNumbers(const std::string& fileName, const int numbersCount, ItemType minNumberValue = -100'000, ItemType maxNumberValue = 100'000);
 ItemType findBorderElement(const std::string& fileName);
+int deleteElement(const std::string& filename, const ItemType element);

@@ -11,7 +11,7 @@ int createFileWithRandomNumbers(const std::string& fileName, const int numbersCo
 
 	if (minNumberValue > maxNumberValue) {
 		ItemType t = minNumberValue;
-		minNumberValue = maxNumberValue; 
+		minNumberValue = maxNumberValue;
 		maxNumberValue = t;
 	}
 
@@ -40,7 +40,7 @@ bool polyphaseSort(const std::string& fileName, const int filesCount)
 {
 	const std::string name("test");
 	std::ofstream* auxiliaryFiles = new std::ofstream[filesCount];
-	
+
 	for (int i = 0; i < filesCount; i++)
 	{
 		std::string fullNameOfFile(name + std::to_string(i) + ".txt");
@@ -51,7 +51,7 @@ bool polyphaseSort(const std::string& fileName, const int filesCount)
 		}
 	}
 
-	
+
 
 
 	delete[] auxiliaryFiles;
@@ -93,13 +93,46 @@ int isFileContainsSortedArray(const std::string& fileName)
 
 ItemType findBorderElement(const std::string& fileName)
 {
-	std::fstream data(fileName, std::ios::in | std::ios::out | std::ios::);
+	std::ifstream data(fileName, std::ios::binary);
+	std::ofstream tempFile("temp.txt", std::ios::binary);
 
 	ItemType minElement;
 	ItemType temp;
 	data >> minElement;
 	while (data)
 	{
-		//TODO:
+		data >> temp;
+		if (temp < minElement)
+		{
+			minElement = temp;
+		}
 	}
+
+	return minElement;
 }
+
+int deleteElement(const std::string& filename, const ItemType element) {
+	std::ifstream input(filename);
+	std::ofstream output("temp.txt");
+	bool first = true;
+	int count = 0;
+
+	int val;
+	while (input >> val) {
+		if (val == element) {
+			count++;
+		}
+		else {
+			output << val << " ";
+		}
+	}
+
+	input.close();
+	output.close();
+
+	remove(filename.c_str());
+	rename("temp.txt", filename.c_str());
+
+	return count;
+}
+
