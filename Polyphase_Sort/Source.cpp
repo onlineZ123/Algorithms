@@ -51,9 +51,6 @@ bool polyphaseSort(const std::string& fileName, const int filesCount)
 		}
 	}
 
-
-
-
 	delete[] auxiliaryFiles;
 	return true;
 }
@@ -94,7 +91,11 @@ int isFileContainsSortedArray(const std::string& fileName)
 ItemType findBorderElement(const std::string& fileName)
 {
 	std::ifstream data(fileName, std::ios::binary);
-	std::ofstream tempFile("temp.txt", std::ios::binary);
+
+	if (!data.is_open())
+	{
+		throw std::string("file did not opened findBorder(string)");
+	}
 
 	ItemType minElement;
 	ItemType temp;
@@ -114,10 +115,14 @@ ItemType findBorderElement(const std::string& fileName)
 int deleteElement(const std::string& filename, const ItemType element) {
 	std::ifstream input(filename);
 	std::ofstream output("temp.txt");
-	bool first = true;
 	int count = 0;
 
-	int val;
+	if (!input.is_open() || !output.is_open())
+	{
+		throw std::string("file did not opened deleteElement(string)");
+	}
+
+	ItemType val;
 	while (input >> val) {
 		if (val == element) {
 			count++;
