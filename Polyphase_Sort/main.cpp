@@ -12,7 +12,7 @@ int main()
 	//createFileWithRandomNumbers(fileName, numberCount);
 
 	try {
-		polyphaseSort(fileName, 6);
+		polyphaseSort(fileName, 4);
 	}
 	catch (...)
 	{

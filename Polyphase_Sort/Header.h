@@ -25,5 +25,5 @@ void print(const int* array, const int size);
 void fillIpAndMs(int* ip, int* ms, const int size);
 
 int* partition(const std::string& fileName, const int filesCount, const ItemType borderElement, int level);
-
+void printFile(const std::string& fileName, const int borderElement);
 

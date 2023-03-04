@@ -40,11 +40,13 @@ bool polyphaseSort(const std::string& fileName, const int filesCount)
 {
 	ItemType borderElement = findBorderElement(fileName);
 	int borderCount = deleteElement(fileName, borderElement);
-	int level = 0;
+	int level = 1;
 
+	std::cout << "Border Element: " << borderElement << std::endl;
+	printFile(fileName, borderElement);
 	int* missingSegments = partition(fileName, filesCount, borderElement, level);
 
-
+	std::cout << "MS: "; print(missingSegments, filesCount); std::cout << std::endl;
 
 	delete[] missingSegments;
 	return true;
@@ -68,17 +70,23 @@ int* partition(const std::string& fileName, const int filesCount, const ItemType
 	}
 
 
-	int* idealPartision = new int[filesCount - 1];
-	int* missingSegments = new int[filesCount - 1];
-	fillIpAndMs(idealPartision, missingSegments, filesCount - 1);
+	int* idealPartision = new int[filesCount];
+	int* missingSegments = new int[filesCount];
+	fillIpAndMs(idealPartision, missingSegments, filesCount);
 
 	ItemType currentIncSequence;
 	int i = 0;
+	/*printFile(fileName, borderElement);
+	std::cout << "Level: " << level << std::endl;
+	std::cout << "IP: "; print(idealPartision, filesCount);
+	std::cout << "MS: "; print(missingSegments, filesCount); std::cout << std::endl;*/
 	if (data >> currentIncSequence)
 	{
 		while (i < filesCount - 1)
 		{
+			
 			ItemType nextIncSequence;
+			
 			while (data >> nextIncSequence)
 			{
 				if (currentIncSequence <= nextIncSequence)
@@ -96,8 +104,10 @@ int* partition(const std::string& fileName, const int filesCount, const ItemType
 				
 			}
 			missingSegments[i]--;
-
-			if (!data)
+			/*std::cout << "Level: " << level << std::endl;
+			std::cout << "IP: "; print(idealPartision, filesCount);
+			std::cout << "MS: "; print(missingSegments, filesCount); std::cout << std::endl;*/
+			if (!data || nextIncSequence == borderElement)
 			{
 				break;
 			}
@@ -112,7 +122,7 @@ int* partition(const std::string& fileName, const int filesCount, const ItemType
 				{
 					level++;
 					i = 0;
-					calculatingIdealPartiosionAndMissingSegments(idealPartision, missingSegments, filesCount - 1);
+					calculatingIdealPartiosionAndMissingSegments(idealPartision, missingSegments, filesCount);
 				}
 				else
 				{
@@ -123,12 +133,13 @@ int* partition(const std::string& fileName, const int filesCount, const ItemType
 		}
 	}
 
-	int l = 0;
 
+	std::cout << "Partition:\n";
 	// reallocate memory
 	for (int j = 0; j < filesCount - 1; j++)
 	{
 		auxiliaryFiles[j]->close();
+		printFile(name + std::to_string(j) + ".txt", borderElement);
 		//std::ignore = remove(std::string(name + std::to_string(j) + ".txt").c_str());
 		delete auxiliaryFiles[j];
 	}
@@ -254,4 +265,22 @@ void fillIpAndMs(int* ip, int* ms, const int size)
 	{
 		ip[i] = ms[i] = 1;
 	}
+}
+
+void printFile(const std::string& fileName, const int borderElement)
+{
+	std::ifstream f;
+	f.open(fileName);
+	std::cout << fileName << ": ";
+
+	ItemType temp;
+	while (f >> temp)
+	{
+		if (temp == borderElement)
+			std::cout << "| ";
+		else
+			std::cout << temp << " ";
+	}
+	std::cout << std::endl;
+	f.close();
 }
