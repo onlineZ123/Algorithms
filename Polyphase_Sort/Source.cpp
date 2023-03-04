@@ -38,21 +38,104 @@ int createFileWithRandomNumbers(const std::string& fileName, const int numbersCo
 
 bool polyphaseSort(const std::string& fileName, const int filesCount)
 {
-	const std::string name("test");
-	std::ofstream* auxiliaryFiles = new std::ofstream[filesCount];
+	ItemType borderElement = findBorderElement(fileName);
+	int borderCount = deleteElement(fileName, borderElement);
+	int level = 0;
 
-	for (int i = 0; i < filesCount; i++)
+	int* missingSegments = partition(fileName, filesCount, borderElement, level);
+
+
+
+	delete[] missingSegments;
+	return true;
+}
+
+int* partition(const std::string& fileName, const int filesCount, const ItemType borderElement, int level)
+{
+	const std::string name("test");
+	std::vector<std::ofstream*> auxiliaryFiles;
+
+	// Open files
+	std::ifstream data(fileName);
+	for (int i = 0; i < filesCount - 1; i++)
 	{
-		std::string fullNameOfFile(name + std::to_string(i) + ".txt");
-		auxiliaryFiles[i].open(fullNameOfFile);
-		if (!auxiliaryFiles[i].is_open())
+		std::ofstream* testFile = new std::ofstream(name + std::to_string(i) + ".txt", std::ios::in | std::ios::trunc);
+		if (!testFile->is_open())
 		{
-			return false;
+			throw std::string("axiliary files does not opened polyphaseSort(string, int)");
+		}
+		auxiliaryFiles.push_back(testFile);
+	}
+
+
+	int* idealPartision = new int[filesCount - 1];
+	int* missingSegments = new int[filesCount - 1];
+	fillIpAndMs(idealPartision, missingSegments, filesCount - 1);
+
+	ItemType currentIncSequence;
+	int i = 0;
+	if (data >> currentIncSequence)
+	{
+		while (i < filesCount - 1)
+		{
+			ItemType nextIncSequence;
+			while (data >> nextIncSequence)
+			{
+				if (currentIncSequence <= nextIncSequence)
+				{
+					(*auxiliaryFiles[i]) << currentIncSequence << " ";
+					currentIncSequence = nextIncSequence;
+				}
+				else
+				{
+					(*auxiliaryFiles[i]) << currentIncSequence << " ";
+					(*auxiliaryFiles[i]) << borderElement << " ";
+					currentIncSequence = nextIncSequence;
+					break;
+				}
+				
+			}
+			missingSegments[i]--;
+
+			if (!data)
+			{
+				break;
+			}
+
+			if (missingSegments[i] < missingSegments[i + 1])
+			{
+				i++;
+			}
+			else
+			{
+				if (missingSegments[i] == 0)
+				{
+					level++;
+					i = 0;
+					calculatingIdealPartiosionAndMissingSegments(idealPartision, missingSegments, filesCount - 1);
+				}
+				else
+				{
+					i = 0;
+				}
+			}
+
 		}
 	}
 
-	delete[] auxiliaryFiles;
-	return true;
+	int l = 0;
+
+	// reallocate memory
+	for (int j = 0; j < filesCount - 1; j++)
+	{
+		auxiliaryFiles[j]->close();
+		//std::ignore = remove(std::string(name + std::to_string(j) + ".txt").c_str());
+		delete auxiliaryFiles[j];
+	}
+
+	delete[] idealPartision;
+
+	return missingSegments;
 }
 
 int isFileContainsSortedArray(const std::string& fileName)
@@ -97,19 +180,21 @@ ItemType findBorderElement(const std::string& fileName)
 		throw std::string("file did not opened findBorder(string)");
 	}
 
-	ItemType minElement;
-	ItemType temp;
-	data >> minElement;
-	while (data)
-	{
-		data >> temp;
-		if (temp < minElement)
-		{
-			minElement = temp;
+	ItemType minVal;
+	if (data >> minVal) {
+		ItemType currVal;
+		while (data >> currVal) {
+			if (currVal < minVal) {
+				minVal = currVal;
+			}
 		}
 	}
+	else {
+		throw std::string("file is empty");
+	}
 
-	return minElement;
+	data.close();
+	return minVal;
 }
 
 int deleteElement(const std::string& filename, const ItemType element) {
@@ -132,12 +217,41 @@ int deleteElement(const std::string& filename, const ItemType element) {
 		}
 	}
 
+	output << element;
+
 	input.close();
 	output.close();
 
 	remove(filename.c_str());
-	rename("temp.txt", filename.c_str());
+	std::ignore = rename("temp.txt", filename.c_str());
 
 	return count;
 }
 
+void calculatingIdealPartiosionAndMissingSegments(int* ip, int* ms, const int size)
+{
+	int temp = ip[0];
+	for (int i = 0; i < size - 1; i++)
+	{
+		ms[i] = ip[i + 1] - ip[i] + temp;
+		ip[i] = ip[i + 1] + temp;
+	}
+}
+
+void print(const int* array, const int size)
+{
+	for (int i = 0; i < size; i++)
+	{
+		std::cout << array[i] << " ";
+	}
+	std::cout << std::endl;
+}
+
+void fillIpAndMs(int* ip, int* ms, const int size)
+{
+	ip[size - 1] = ms[size - 1] = 0;
+	for (int i = 0; i < size - 1; i++)
+	{
+		ip[i] = ms[i] = 1;
+	}
+}

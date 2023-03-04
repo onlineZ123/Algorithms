@@ -11,10 +11,12 @@ int main()
 	
 	//createFileWithRandomNumbers(fileName, numberCount);
 
-	int i;
-	int j;
-	std::cout << (i = findBorderElement(fileName)) << std::endl;
-	std::cout << deleteElement(fileName, i);
-	//polyphaseSort(",xc");
+	try {
+		polyphaseSort(fileName, 6);
+	}
+	catch (...)
+	{
+		std::cout << "skldjf";
+	}
 	return 0;
 }
