@@ -36,31 +36,36 @@ int createFileWithRandomNumbers(const std::string& fileName, const int numbersCo
 	return 0;
 }
 
-bool polyphaseSort(const std::string& fileName, const int filesCount)
+void polyphaseSort(const std::string& fileName, int filesCount)
 {
+	if (filesCount < 3)
+	{
+		filesCount = 3;
+	}
 	try
 	{
 		ItemType borderElement = findBorderElement(fileName);
 		int borderCount = deleteElement(fileName, borderElement);
 		int level = 1;
 
-		// Partition and calculating phases and missingSegments
-		std::cout << "Border Element: " << borderElement << std::endl;
-		printFile(fileName, borderElement);
+		//printFile(fileName, borderElement);
 		int* idealPartition = new int[filesCount];
 		int* missingSegments = partition(fileName, filesCount, borderElement, level, idealPartition);
-		std::cout << "MS: "; print(missingSegments, filesCount); std::cout << std::endl;
+		std::cout << "Border Element: " << borderElement << "\nPahases: " << level << std::endl;
+		//std::cout << "MS: "; print(missingSegments, filesCount); std::cout << std::endl;
 
-		// Merging
+
+		inputBorderElements(fileName, borderElement, borderCount);
+
 		merge(fileName, filesCount, borderElement, level, missingSegments, idealPartition);
 
 		delete[] missingSegments;
+		delete[] idealPartition;
 	}
 	catch (...)
 	{
 		throw 1;
 	}
-	return true;
 }
 
 int* partition(const std::string& fileName, const int filesCount, const ItemType borderElement, int& level, int* idealPartition)
@@ -144,14 +149,13 @@ int* partition(const std::string& fileName, const int filesCount, const ItemType
 	}
 
 
-	std::cout << "Partition:\n";
+	//std::cout << "Partition:\n";
 	// reallocate memory
 	data.close();
 	for (int j = 0; j < filesCount - 1; j++)
 	{
 		auxiliaryFiles[j]->close();
-		printFile(name + std::to_string(j) + ".txt", borderElement);
-		//std::ignore = remove(std::string(name + std::to_string(j) + ".txt").c_str());
+		//printFile(name + std::to_string(j) + ".txt", borderElement);
 		delete auxiliaryFiles[j];
 	}
 
@@ -173,7 +177,7 @@ int isFileContainsSortedArray(const std::string& fileName)
 
 	if (inf.eof())
 	{
-		return 1;
+		return 0;
 	}
 
 	ItemType temp;
@@ -184,16 +188,16 @@ int isFileContainsSortedArray(const std::string& fileName)
 	{
 		if (temp > current)
 		{
-			return 0;
+			return 1;
 		}
 	}
 
-	return 1;
+	return 0;
 }
 
 ItemType findBorderElement(const std::string& fileName)
 {
-	std::ifstream data(fileName, std::ios::binary);
+	std::ifstream data(fileName);
 
 	if (!data.is_open())
 	{
@@ -294,7 +298,7 @@ void printFile(const std::string& fileName, const int borderElement)
 	f.close();
 }
 
-std::fstream merge(const std::string& fileName, const int filesCount, const ItemType borderElement, int& level, int* missingSegments, int* idealPartition)
+void merge(const std::string& fileName, const int filesCount, const ItemType borderElement, int& level, int* missingSegments, int* idealPartition)
 {
 	const std::string name("test");
 	std::vector<std::fstream*> auxiliaryFiles;
@@ -346,9 +350,9 @@ std::fstream merge(const std::string& fileName, const int filesCount, const Item
 			lastIdealPartition--;
 		} 
 
-		std::cout << "Level: " << level << std::endl;
+	/*	std::cout << "Level: " << level << std::endl;
 		std::cout << "IP: "; print(idealPartition, filesCount);
-		std::cout << "MS: "; print(missingSegments, filesCount); std::cout << std::endl;
+		std::cout << "MS: "; print(missingSegments, filesCount); std::cout << std::endl;*/
 
 		std::fstream* tempFile = auxiliaryFiles[filesCount - 1];
 
@@ -358,11 +362,11 @@ std::fstream merge(const std::string& fileName, const int filesCount, const Item
 		
 		auxiliaryFiles[filesCount - 1]->close();
 		auxiliaryFiles[filesCount - 1]->open(names[filesCount - 1], std::ios::in);
+
 		if (!(auxiliaryFiles[filesCount - 2]->is_open()) || !(auxiliaryFiles[filesCount - 1]->is_open()))
 		{
 			throw 1;
 		}
-		
 
 		int z = idealPartition[filesCount - 2];
 		int msTemp = missingSegments[filesCount - 1];
@@ -388,8 +392,8 @@ std::fstream merge(const std::string& fileName, const int filesCount, const Item
 		auxiliaryFiles[i]->close();
 		delete auxiliaryFiles[i];
 	}
-
-
+	//printFile(names[0], borderElement);
+	inputSegment(names[0], fileName, borderElement);
 }
 
 ItemType findMinElement(const ItemType* arr, const int size)
@@ -410,7 +414,7 @@ ItemType findMinElement(const ItemType* arr, const int size)
 void oneRunMerge(std::vector<std::fstream*>& files, const int filesCount, const ItemType borderElement, std::vector<bool>& filesToMerge)
 {
 	ItemType* buffer = new ItemType[filesToMerge.size()];
-	for (int i = 0; i < filesToMerge.size(); i++)
+	for (unsigned int i = 0; i < filesToMerge.size(); i++)
 	{
 		if (filesToMerge[i])
 		{
@@ -484,4 +488,63 @@ void printFile(std::fstream& f, const int borderElement)
 			std::cout << temp << " ";
 	}
 	std::cout << std::endl;
+}
+
+
+void inputBorderElements(const std::string& fileName, const int borderElment, const int borderCount)
+{
+	std::ofstream file(fileName, std::ios::out | std::ios::trunc);
+	if (!file.is_open())
+	{
+		throw 1;
+	}
+
+	for (int i = 0; i < borderCount; i++)
+	{
+		file << borderElment << " ";
+	}
+}
+
+
+void inputSegment(const std::string& from, const std::string& to, const ItemType borderElement)
+{
+	std::ifstream f(from);
+	std::ofstream t(to, std::ios::out | std::ios::app);
+	if (!f.is_open() || !t.is_open())
+	{
+		throw 1;
+	}
+
+	ItemType val;
+	while (f >> val)
+	{
+		if (val == borderElement)
+		{
+			break;
+		}
+		t << val << " ";
+	}
+
+	f.close();
+	t.close();
+}
+
+
+int test(const std::string& fileName, const int fileNumbers, const int numberCount, const int minNumber, const int maxNumber)
+{
+	if (createFileWithRandomNumbers(fileName, numberCount, minNumber, maxNumber)) {
+		return -1;
+	}
+
+	const auto start = std::chrono::steady_clock::now();
+	polyphaseSort(fileName, fileNumbers);
+	const auto end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end - start;
+	std::cout << "Polyphase sorting time:\t" << elapsed_seconds.count() << "s ";
+
+	if (isFileContainsSortedArray(fileName)) {
+		return -2;
+	}
+
+	return 1;
 }
