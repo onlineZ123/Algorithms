@@ -294,26 +294,26 @@ void printFile(const std::string& fileName, const int borderElement)
 	f.close();
 }
 
-void merge(const std::string& fileName, const int filesCount, const ItemType borderElement, int& level, int* missingSegments, int* idealPartition)
+std::fstream merge(const std::string& fileName, const int filesCount, const ItemType borderElement, int& level, int* missingSegments, int* idealPartition)
 {
 	const std::string name("test");
 	std::vector<std::fstream*> auxiliaryFiles;
+	std::vector<std::string> names(filesCount);
 	auxiliaryFiles.reserve(filesCount);
-
-	ItemType* buf = new ItemType[filesCount - 1];
 
 	// Open file
 	for (int i = 0; i < filesCount - 1; i++)
 	{
-		std::fstream* testFile = new std::fstream(name + std::to_string(i) + ".txt", std::ios::in);
+		names[i] = name + std::to_string(i) + ".txt";
+		std::fstream* testFile = new std::fstream(names[i], std::ios::in);
 		if (!testFile->is_open())
 		{
 			throw std::string("axiliary files does not opened polyphaseSort(string, int)");
 		}
 		auxiliaryFiles.push_back(testFile);
 	}
-
-	auxiliaryFiles.push_back(new std::fstream(name + std::to_string(filesCount - 1) + ".txt", std::ios::out));
+	names[filesCount - 1] = name + std::to_string(filesCount - 1) + ".txt";
+	auxiliaryFiles.push_back(new std::fstream(names[filesCount - 1], std::ios::out));
 
 	while (level != 0)
 	{
@@ -343,7 +343,7 @@ void merge(const std::string& fileName, const int filesCount, const ItemType bor
 			{
 				oneRunMerge(auxiliaryFiles, numberOfFilesToMerge, borderElement, filesToMerge);
 			}
-				lastIdealPartition--;
+			lastIdealPartition--;
 		} 
 
 		std::cout << "Level: " << level << std::endl;
@@ -352,34 +352,44 @@ void merge(const std::string& fileName, const int filesCount, const ItemType bor
 
 		std::fstream* tempFile = auxiliaryFiles[filesCount - 1];
 
+		// problem
 		auxiliaryFiles[filesCount - 2]->close();
+		auxiliaryFiles[filesCount - 2]->open(names[filesCount - 2], std::ios::out);
+		
 		auxiliaryFiles[filesCount - 1]->close();
-
-		auxiliaryFiles[filesCount - 2]->open(name + std::to_string(filesCount - 2) + ".txt", std::ios::out);
-		auxiliaryFiles[filesCount - 1]->open(name + std::to_string(filesCount - 1) + ".txt", std::ios::in);
+		auxiliaryFiles[filesCount - 1]->open(names[filesCount - 1], std::ios::in);
+		if (!(auxiliaryFiles[filesCount - 2]->is_open()) || !(auxiliaryFiles[filesCount - 1]->is_open()))
+		{
+			throw 1;
+		}
+		
 
 		int z = idealPartition[filesCount - 2];
 		int msTemp = missingSegments[filesCount - 1];
+		std::string tempName = names[filesCount - 1];
 
 		for (int i = filesCount - 1; i > 0; i--)
 		{
+			names[i] = names[i - 1];
 			auxiliaryFiles[i] = auxiliaryFiles[i - 1];
 			missingSegments[i] = missingSegments[i - 1];
 			idealPartition[i] = idealPartition[i - 1] - z;
 		}
 
 		level--;
+		names[0] = tempName;
 		auxiliaryFiles[0] = tempFile;
 		missingSegments[0] = msTemp;
 		idealPartition[0] = z;
 	}
 
-
-	for (auto &f : auxiliaryFiles)
+	for (int i = 0; i < filesCount; i++)
 	{
-		f->close();
-		delete f;
+		auxiliaryFiles[i]->close();
+		delete auxiliaryFiles[i];
 	}
+
+
 }
 
 ItemType findMinElement(const ItemType* arr, const int size)
