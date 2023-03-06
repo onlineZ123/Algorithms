@@ -14,7 +14,7 @@ int isFileContainsSortedArray(const std::string& fileName);
 
 bool polyphaseSort(const std::string& fileName, const int filesCount = 2);
 int* partition(const std::string& fileName, const int filesCount, const ItemType borderElement, int &level, int* idealPartition);
-void merge(const std::string& fileName, const int filesCount, const ItemType borderElement, int &level, int* missingSegments, int* idealPartition);
+std::fstream merge(const std::string& fileName, const int filesCount, const ItemType borderElement, int &level, int* missingSegments, int* idealPartition);
 void oneRunMerge(std::vector<std::fstream*>& files, const int filesCount, const ItemType borderElement, std::vector<bool> &filesToMerge);
 void calculatingIdealPartiosionAndMissingSegments(int* ip, int* ms, const int size);
 void fillIpAndMs(int* ip, int* ms, const int size);
