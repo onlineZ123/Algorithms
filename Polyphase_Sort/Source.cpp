@@ -38,24 +38,36 @@ int createFileWithRandomNumbers(const std::string& fileName, const int numbersCo
 
 bool polyphaseSort(const std::string& fileName, const int filesCount)
 {
-	ItemType borderElement = findBorderElement(fileName);
-	int borderCount = deleteElement(fileName, borderElement);
-	int level = 1;
+	try
+	{
+		ItemType borderElement = findBorderElement(fileName);
+		int borderCount = deleteElement(fileName, borderElement);
+		int level = 1;
 
-	std::cout << "Border Element: " << borderElement << std::endl;
-	printFile(fileName, borderElement);
-	int* missingSegments = partition(fileName, filesCount, borderElement, level);
+		// Partition and calculating phases and missingSegments
+		std::cout << "Border Element: " << borderElement << std::endl;
+		printFile(fileName, borderElement);
+		int* idealPartition = new int[filesCount];
+		int* missingSegments = partition(fileName, filesCount, borderElement, level, idealPartition);
+		std::cout << "MS: "; print(missingSegments, filesCount); std::cout << std::endl;
 
-	std::cout << "MS: "; print(missingSegments, filesCount); std::cout << std::endl;
+		// Merging
+		merge(fileName, filesCount, borderElement, level, missingSegments, idealPartition);
 
-	delete[] missingSegments;
+		delete[] missingSegments;
+	}
+	catch (...)
+	{
+		throw 1;
+	}
 	return true;
 }
 
-int* partition(const std::string& fileName, const int filesCount, const ItemType borderElement, int level)
+int* partition(const std::string& fileName, const int filesCount, const ItemType borderElement, int& level, int* idealPartition)
 {
 	const std::string name("test");
 	std::vector<std::ofstream*> auxiliaryFiles;
+	auxiliaryFiles.reserve(filesCount);
 
 	// Open files
 	std::ifstream data(fileName);
@@ -69,10 +81,8 @@ int* partition(const std::string& fileName, const int filesCount, const ItemType
 		auxiliaryFiles.push_back(testFile);
 	}
 
-
-	int* idealPartision = new int[filesCount];
 	int* missingSegments = new int[filesCount];
-	fillIpAndMs(idealPartision, missingSegments, filesCount);
+	fillIpAndMs(idealPartition, missingSegments, filesCount);
 
 	ItemType currentIncSequence;
 	int i = 0;
@@ -84,9 +94,9 @@ int* partition(const std::string& fileName, const int filesCount, const ItemType
 	{
 		while (i < filesCount - 1)
 		{
-			
+
 			ItemType nextIncSequence;
-			
+
 			while (data >> nextIncSequence)
 			{
 				if (currentIncSequence <= nextIncSequence)
@@ -101,7 +111,7 @@ int* partition(const std::string& fileName, const int filesCount, const ItemType
 					currentIncSequence = nextIncSequence;
 					break;
 				}
-				
+
 			}
 			missingSegments[i]--;
 			/*std::cout << "Level: " << level << std::endl;
@@ -122,7 +132,7 @@ int* partition(const std::string& fileName, const int filesCount, const ItemType
 				{
 					level++;
 					i = 0;
-					calculatingIdealPartiosionAndMissingSegments(idealPartision, missingSegments, filesCount);
+					calculatingIdealPartiosionAndMissingSegments(idealPartition, missingSegments, filesCount);
 				}
 				else
 				{
@@ -136,6 +146,7 @@ int* partition(const std::string& fileName, const int filesCount, const ItemType
 
 	std::cout << "Partition:\n";
 	// reallocate memory
+	data.close();
 	for (int j = 0; j < filesCount - 1; j++)
 	{
 		auxiliaryFiles[j]->close();
@@ -143,8 +154,6 @@ int* partition(const std::string& fileName, const int filesCount, const ItemType
 		//std::ignore = remove(std::string(name + std::to_string(j) + ".txt").c_str());
 		delete auxiliaryFiles[j];
 	}
-
-	delete[] idealPartision;
 
 	return missingSegments;
 }
@@ -283,4 +292,186 @@ void printFile(const std::string& fileName, const int borderElement)
 	}
 	std::cout << std::endl;
 	f.close();
+}
+
+void merge(const std::string& fileName, const int filesCount, const ItemType borderElement, int& level, int* missingSegments, int* idealPartition)
+{
+	const std::string name("test");
+	std::vector<std::fstream*> auxiliaryFiles;
+	auxiliaryFiles.reserve(filesCount);
+
+	ItemType* buf = new ItemType[filesCount - 1];
+
+	// Open file
+	for (int i = 0; i < filesCount - 1; i++)
+	{
+		std::fstream* testFile = new std::fstream(name + std::to_string(i) + ".txt", std::ios::in);
+		if (!testFile->is_open())
+		{
+			throw std::string("axiliary files does not opened polyphaseSort(string, int)");
+		}
+		auxiliaryFiles.push_back(testFile);
+	}
+
+	auxiliaryFiles.push_back(new std::fstream(name + std::to_string(filesCount - 1) + ".txt", std::ios::out));
+
+	while (level != 0)
+	{
+		int lastIdealPartition = idealPartition[filesCount - 2];
+		while (lastIdealPartition != 0)
+		{
+			std::vector<bool> filesToMerge(filesCount - 1, false);
+			int numberOfFilesToMerge = 0;
+			for (int i = 0; i < filesCount - 1; i++)
+			{
+				if (missingSegments[i] > 0)
+				{
+					missingSegments[i]--;
+				}
+				else
+				{
+					filesToMerge[i] = true;
+					numberOfFilesToMerge++;
+				}
+			}
+
+			if (numberOfFilesToMerge == 0)
+			{
+				missingSegments[filesCount - 1]++;
+			}
+			else
+			{
+				oneRunMerge(auxiliaryFiles, numberOfFilesToMerge, borderElement, filesToMerge);
+			}
+				lastIdealPartition--;
+		} 
+
+		std::cout << "Level: " << level << std::endl;
+		std::cout << "IP: "; print(idealPartition, filesCount);
+		std::cout << "MS: "; print(missingSegments, filesCount); std::cout << std::endl;
+
+		std::fstream* tempFile = auxiliaryFiles[filesCount - 1];
+
+		auxiliaryFiles[filesCount - 2]->close();
+		auxiliaryFiles[filesCount - 1]->close();
+
+		auxiliaryFiles[filesCount - 2]->open(name + std::to_string(filesCount - 2) + ".txt", std::ios::out);
+		auxiliaryFiles[filesCount - 1]->open(name + std::to_string(filesCount - 1) + ".txt", std::ios::in);
+
+		int z = idealPartition[filesCount - 2];
+		int msTemp = missingSegments[filesCount - 1];
+
+		for (int i = filesCount - 1; i > 0; i--)
+		{
+			auxiliaryFiles[i] = auxiliaryFiles[i - 1];
+			missingSegments[i] = missingSegments[i - 1];
+			idealPartition[i] = idealPartition[i - 1] - z;
+		}
+
+		level--;
+		auxiliaryFiles[0] = tempFile;
+		missingSegments[0] = msTemp;
+		idealPartition[0] = z;
+	}
+
+
+	for (auto &f : auxiliaryFiles)
+	{
+		f->close();
+		delete f;
+	}
+}
+
+ItemType findMinElement(const ItemType* arr, const int size)
+{
+	ItemType minElement = arr[0];
+	for (int i = 1; i < size; i++)
+	{
+		if (minElement > arr[i])
+		{
+			minElement = arr[i];
+		}
+	}
+
+	return minElement;
+}
+
+
+void oneRunMerge(std::vector<std::fstream*>& files, const int filesCount, const ItemType borderElement, std::vector<bool>& filesToMerge)
+{
+	ItemType* buffer = new ItemType[filesToMerge.size()];
+	for (int i = 0; i < filesToMerge.size(); i++)
+	{
+		if (filesToMerge[i])
+		{
+			if (!((*files[i]) >> buffer[i]))
+			{
+				buffer[i] = borderElement;
+			}
+		}
+		else
+		{
+			buffer[i] = borderElement;
+		}
+	}
+
+	int j = filesToMerge.size();
+	while (true)
+	{
+		int minIndex = -1;
+		ItemType min_value;
+
+		// Finding minimum element in buffer witout border element
+		for (unsigned int i = 0; i < filesToMerge.size(); i++) {
+			if (filesToMerge[i] && buffer[i] != borderElement && (minIndex == -1 || buffer[i] < min_value))
+			{
+				minIndex = i;
+				min_value = buffer[i];
+			}
+		}
+
+		if (minIndex == -1 || buffer[minIndex] == borderElement) {
+			break;
+		}
+
+		(*files[files.size() - 1]) << min_value << " ";
+		(*files[minIndex]) >> buffer[minIndex];
+		if (files[minIndex]->eof())
+		{
+			filesToMerge[minIndex] = false;
+			j--;
+			/*if (j == 1) {
+				for (int i = 0; i < filesToMerge.size(); i++) {
+					if (filesToMerge[i]) {
+						ItemType val;
+						while ((*files[files.size() - 2]) >> val) {
+							if (val == borderElement)
+							{
+								break;
+							}
+							(*files[files.size() - 1]) << val << " ";
+						}
+						break;
+					}
+				}
+				break;
+			}*/
+		}
+	}
+
+	(*files[files.size() - 1]) << borderElement << " ";
+	delete[] buffer;
+}
+
+void printFile(std::fstream& f, const int borderElement)
+{
+	ItemType temp;
+	while (f >> temp)
+	{
+		if (temp == borderElement)
+			std::cout << "| ";
+		else
+			std::cout << temp << " ";
+	}
+	std::cout << std::endl;
 }
