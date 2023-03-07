@@ -51,7 +51,7 @@ void polyphaseSort(const std::string& fileName, int filesCount)
 		//printFile(fileName, borderElement);
 		int* idealPartition = new int[filesCount];
 		int* missingSegments = partition(fileName, filesCount, borderElement, level, idealPartition);
-		std::cout << "Border Element: " << borderElement << "\nPahases: " << level << std::endl;
+		std::cout << "Border Element: " << borderElement << "\nPhases: " << level << std::endl;
 		//std::cout << "MS: "; print(missingSegments, filesCount); std::cout << std::endl;
 
 
@@ -184,13 +184,14 @@ int isFileContainsSortedArray(const std::string& fileName)
 	ItemType current;
 
 	inf >> temp;
-	while (inf >> current)
-	{
-		if (temp > current)
+		while (inf >> current)
 		{
-			return 1;
+			if (temp > current)
+			{
+				return 1;
+			}
+			temp = current;
 		}
-	}
 
 	return 0;
 }
